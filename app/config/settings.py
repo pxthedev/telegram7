@@ -11,6 +11,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
+        enable_decoding=False,
     )
 
     bot_token: str = ""
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     database_ssl: str = "disable"
 
     admin_ids: list[int] = Field(default_factory=list)
+    admin_usernames: list[str] = Field(default_factory=list)
 
     affiliate_percentage: Decimal = Decimal("25")
     pix_expiration_minutes: int = 30
@@ -73,6 +75,21 @@ class Settings(BaseSettings):
             return [int(value)]
         return value
 
+    @field_validator("admin_usernames", mode="before")
+    @classmethod
+    def _parse_admin_usernames(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [
+                item.strip().lstrip("@").lower()
+                for item in value.split(",")
+                if item.strip()
+            ]
+        if isinstance(value, (list, tuple)):
+            return [str(item).lstrip("@").lower() for item in value]
+        return value
+
     @property
     def freepay_postback_url(self) -> str:
         return f"{self.webhook_base_url.rstrip('/')}/webhooks/freepay"
@@ -84,8 +101,16 @@ class Settings(BaseSettings):
             return {}
         return {"ssl": ssl}
 
-    def is_admin(self, telegram_id: int) -> bool:
-        return telegram_id in self.admin_ids
+    def is_admin(
+        self,
+        telegram_id: int | None = None,
+        username: str | None = None,
+    ) -> bool:
+        if telegram_id is not None and telegram_id in self.admin_ids:
+            return True
+        if username:
+            return username.strip().lstrip("@").lower() in self.admin_usernames
+        return False
 
 
 settings = Settings()

@@ -25,7 +25,8 @@ class ThrottlingMiddleware(BaseMiddleware):
     ) -> Any:
         user = getattr(event, "from_user", None)
         user_id = getattr(user, "id", None)
-        if user_id is None or settings.is_admin(user_id):
+        username = getattr(user, "username", None)
+        if user_id is None or settings.is_admin(user_id, username):
             return await handler(event, data)
 
         now = time.monotonic()

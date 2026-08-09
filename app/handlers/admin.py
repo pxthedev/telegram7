@@ -60,7 +60,8 @@ class AdminAccessMiddleware(BaseMiddleware):
     ) -> Any:
         user = getattr(event, "from_user", None)
         user_id = getattr(user, "id", None)
-        if not settings.is_admin(user_id):
+        username = getattr(user, "username", None)
+        if not settings.is_admin(user_id, username):
             return None
         return await handler(event, data)
 
@@ -78,7 +79,7 @@ def _since_for(period: str) -> datetime | None:
 
 @router.message(Command("admin"))
 async def cmd_admin(message: Message, session: AsyncSession) -> None:
-    if not settings.is_admin(message.from_user.id):
+    if not settings.is_admin(message.from_user.id, message.from_user.username):
         return
     await message.answer("⚙️ Painel Administrativo", reply_markup=admin_menu_kb())
 

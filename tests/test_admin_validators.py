@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from app.config.settings import Settings
 from app.utils.formatting import fmt_money
 from app.utils.validators import (
     parse_amount,
@@ -17,6 +18,22 @@ def test_admin_ids(test_settings):
     assert test_settings.is_admin(1) is True
     assert test_settings.is_admin(2) is True
     assert test_settings.is_admin(999) is False
+
+
+def test_admin_usernames():
+    settings = Settings(
+        _env_file=None,
+        bot_token="test:token",
+        bot_username="test_bot",
+        database_url="sqlite+aiosqlite://",
+        admin_usernames="rscs7,@eupedromv, RSCS7",
+        environment="test",
+    )
+    assert settings.admin_usernames == ["rscs7", "eupedromv", "rscs7"]
+    assert settings.is_admin(username="rscs7") is True
+    assert settings.is_admin(username="@Eupedromv") is True
+    assert settings.is_admin(username="outro") is False
+    assert settings.is_admin(999) is False
 
 
 def test_parse_amount_formats(test_settings):

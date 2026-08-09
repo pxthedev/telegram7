@@ -90,7 +90,8 @@ Preencha as variáveis obrigatórias:
 | `BOT_USERNAME` | Sim | Username do bot (ex.: `loja_exemplo_bot`) |
 | `DATABASE_URL` | Sim | URL de conexão do Supabase (PostgreSQL) com prefixo `+asyncpg` |
 | `DATABASE_SSL` | Sim | `require` (Supabase exige SSL) |
-| `ADMIN_IDS` | Sim | IDs Telegram dos administradores, separados por vírgula |
+| `ADMIN_IDS` | Não | IDs numéricos dos administradores, separados por vírgula (ex.: `123456,789012`) |
+| `ADMIN_USERNAMES` | Não | Usernames dos administradores, separados por vírgula, com ou sem `@` (ex.: `rscs7,eupedromv`) |
 | `WEBHOOK_BASE_URL` | Sim* | URL pública base onde o webhook da FreePay será entregue (*necessária para PIX automático) |
 | `AFFILIATE_PERCENTAGE` | Não | Porcentagem de comissão do afiliado (padrão `25`) |
 
