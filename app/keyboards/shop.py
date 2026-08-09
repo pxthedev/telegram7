@@ -5,11 +5,19 @@ from app.keyboards.callbacks import ShopCB
 from app.utils.formatting import esc, fmt_money
 
 
+def _stock_label(product: Product) -> str:
+    stock = product.stock if product.stock is not None else 0
+    if stock > 0:
+        return f"📦 Estoque: {stock}"
+    return "📦 Sem estoque"
+
+
 def shop_kb(products: list[Product]) -> InlineKeyboardMarkup:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"🛒 {esc(product.name)} — {fmt_money(product.price)}",
+                text=f"🛒 {esc(product.name)} — {fmt_money(product.price)} | "
+                f"{_stock_label(product)}",
                 callback_data=ShopCB(action="prod", product_id=product.id).pack(),
             )
         ]

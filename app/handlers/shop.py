@@ -43,7 +43,9 @@ async def cb_shop_list(callback: CallbackQuery, session: AsyncSession) -> None:
         )
         return
     lines = "\n".join(
-        f"• {esc(p.name)} — {fmt_money(p.price)}" for p in products
+        f"• {esc(p.name)} — {fmt_money(p.price)}"
+        f" (estoque: {p.stock if p.stock is not None else 0})"
+        for p in products
     )
     await edit_message(
         callback.message,
