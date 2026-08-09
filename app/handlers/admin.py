@@ -31,7 +31,11 @@ from app.keyboards.admin import (
 )
 from app.keyboards.callbacks import AdminCB
 from app.services import product_service, transaction_service
-from app.states.user_states import ProductCreateStates, ProductEditStates
+from app.states.user_states import (
+    ProductCommandStates,
+    ProductCreateStates,
+    ProductEditStates,
+)
 from app.utils.formatting import (
     esc,
     fmt_datetime,
@@ -77,6 +81,69 @@ async def cmd_admin(message: Message, session: AsyncSession) -> None:
     if not settings.is_admin(message.from_user.id):
         return
     await message.answer("⚙️ Painel Administrativo", reply_markup=admin_menu_kb())
+
+
+@router.message(Command("addproduto"))
+async def cmd_add_product(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await state.set_state(ProductCommandStates.name)
+    await message.answer(
+        "➕ Novo produto\n\n"
+        "Envie o nome:",
+        admin_back_kb("products"),
+    )
+
+
+@router.message(ProductCommandStates.name)
+async def fsm_cmd_product_name(message: Message, state: FSMContext) -> None:
+    name = (message.text or "").strip()
+    if not name or len(name) > 255:
+        await message.answer("❌ Nome inválido (máx. 255 caracteres). Envie novamente:")
+        return
+    await state.update_data(product_name=name)
+    await state.set_state(ProductCommandStates.description)
+    await message.answer("Envie a descrição:")
+
+
+@router.message(ProductCommandStates.description)
+async def fsm_cmd_product_description(message: Message, state: FSMContext) -> None:
+    description = (message.text or "").strip()
+    if not description or description == "-":
+        await message.answer("❌ A descrição é obrigatória. Envie a descrição:")
+        return
+    await state.update_data(product_description=description)
+    await state.set_state(ProductCommandStates.price)
+    await message.answer(
+        "Envie o preço (ex: 49,90) ou '-' para deixar grátis:"
+    )
+
+
+@router.message(ProductCommandStates.price)
+async def fsm_cmd_product_price(
+    message: Message, state: FSMContext, session: AsyncSession
+) -> None:
+    raw = (message.text or "").strip()
+    price = Decimal("0")
+    if raw and raw != "-":
+        parsed = parse_amount(raw)
+        if parsed is None:
+            await message.answer(
+                "❌ Preço inválido. Envie o preço (ex: 49,90) ou '-' para deixar grátis:"
+            )
+            return
+        price = parsed
+    data = await state.get_data()
+    async with session.begin():
+        await product_service.create_product(
+            session,
+            name=data["product_name"],
+            description=data["product_description"],
+            price=price,
+            stock=0,
+            content=None,
+        )
+    await state.clear()
+    await message.answer("✅ Produto criado com sucesso!", reply_markup=admin_menu_kb())
 
 
 @router.callback_query(AdminCB.filter(F.action == "menu"))

@@ -15,6 +15,7 @@ Stack: **Python 3.12**, **aiogram 3.x**, **PostgreSQL**, **SQLAlchemy 2.x**, **A
 - 💎 Perfil com saldo, compras e recargas
 - 🛍️ Histórico de compras e recargas com paginação
 - ⚙️ Painel administrativo com dashboard, produtos, pagamentos, afiliados, estoque, pedidos, logs e configurações
+- ➕ Comando `/addproduto` (admin) para cadastrar produto com nome e descrição obrigatórios e preço opcional (`-` para grátis)
 - 🛡️ Rate limiting, idempotência, validação de entrada, autorização de admin e webhook autenticado por estrutura
 
 ---
@@ -109,6 +110,15 @@ Para criar novas migrações após alterar os modelos:
 alembic revision --autogenerate -m "descricao"
 alembic upgrade head
 ```
+
+**Alternativa sem Alembic** — criar as tabelas diretamente a partir dos modelos:
+
+```bash
+python create_tables.py            # cria as tabelas faltantes no banco (.env)
+python create_tables.py --sql      # gera schema.sql (DDL) para colar no SQL Editor do Supabase
+```
+
+O `schema.sql` já está incluído no projeto — é útil quando o banco ainda está vazio. Depois de criado, alterações de estrutura devem ser feitas via **Alembic** (o `create_all` não altera tabelas existentes).
 
 ---
 
@@ -308,7 +318,28 @@ O endpoint fica em `https://<subdominio>.squareweb.app/webhooks/freepay`. Config
 
 ---
 
-## 15. Troubleshooting
+## 15. Backup do banco de dados
+
+O Supabase não executa scripts próprios — o backup é feito **de fora**, via `pg_dump`. O script `backup.ps1` usa o **Docker** (imagem `postgres:16-alpine`) para gerar um dump do banco com segurança:
+
+```powershell
+./backup.ps1            # lê DATABASE_URL e DATABASE_SSL do .env
+./backup.ps1 -Retention 30   # mantém os últimos 30 backups
+```
+
+O que ele faz:
+
+- Lê `DATABASE_URL` do `.env` (converte `+asyncpg://` → `://` e adiciona `sslmode=require`).
+- Gera `backups/backup_YYYYMMDD_HHMMSS.dump` (formato custom `-Fc`, compacto).
+- Remove backups antigos, mantendo os últimos `Retention` (padrão 14).
+
+**Agendar automaticamente (Windows):** abra o *Agendador de Tarefas* → criar tarefa → disparar em *Diário* → ação `powershell.exe -File C:\caminho\backup.ps1`.
+
+> O plano gratuito do Supabase já faz **backups automáticos diários** (restauráveis por um período curto). O `backup.ps1` é uma camada extra de segurança, mantendo cópias suas fora da nuvem.
+
+---
+
+## 16. Troubleshooting
 
 | Problema | Solução |
 |---|---|

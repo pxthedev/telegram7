@@ -17,6 +17,12 @@ class ProductCreateStates(StatesGroup):
     stock = State()
 
 
+class ProductCommandStates(StatesGroup):
+    name = State()
+    description = State()
+    price = State()
+
+
 class ProductEditStates(StatesGroup):
     price = State()
     stock = State()
