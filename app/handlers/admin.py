@@ -91,7 +91,7 @@ async def cmd_add_product(message: Message, state: FSMContext) -> None:
     await message.answer(
         "➕ Novo produto\n\n"
         "Envie o nome:",
-        admin_back_kb("products"),
+        reply_markup=admin_back_kb("products"),
     )
 
 
