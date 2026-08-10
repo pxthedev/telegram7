@@ -25,11 +25,6 @@ class User(Base):
     referred_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
-    customer_name: Mapped[str | None] = mapped_column(String(255))
-    customer_email: Mapped[str | None] = mapped_column(String(255))
-    customer_phone: Mapped[str | None] = mapped_column(String(32))
-    customer_document_type: Mapped[str | None] = mapped_column(String(8))
-    customer_document_number: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

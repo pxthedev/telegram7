@@ -26,11 +26,6 @@ CREATE TABLE IF NOT EXISTS users (
 	balance NUMERIC(12, 2) DEFAULT '0' NOT NULL, 
 	affiliate_code VARCHAR(32), 
 	referred_by INTEGER, 
-	customer_name VARCHAR(255), 
-	customer_email VARCHAR(255), 
-	customer_phone VARCHAR(32), 
-	customer_document_type VARCHAR(8), 
-	customer_document_number VARCHAR(20), 
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	CONSTRAINT pk_users PRIMARY KEY (id), 
 	CONSTRAINT fk_users_referred_by_users FOREIGN KEY(referred_by) REFERENCES users (id) ON DELETE SET NULL
@@ -38,11 +33,11 @@ CREATE TABLE IF NOT EXISTS users (
 
 ;
 
-CREATE INDEX IF NOT EXISTS ix_users_referred_by ON users (referred_by);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_id ON users (telegram_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS ix_users_affiliate_code ON users (affiliate_code);
 
-CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_id ON users (telegram_id);
+CREATE INDEX IF NOT EXISTS ix_users_referred_by ON users (referred_by);
 
 
 CREATE TABLE IF NOT EXISTS webhook_events (
@@ -83,11 +78,11 @@ CREATE TABLE IF NOT EXISTS pix_payments (
 
 CREATE INDEX IF NOT EXISTS ix_pix_payments_user_id ON pix_payments (user_id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS ix_pix_payments_provider_payment_id ON pix_payments (provider_payment_id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS ix_pix_payments_external_id ON pix_payments (external_id);
 
 CREATE INDEX IF NOT EXISTS ix_pix_payments_status ON pix_payments (status);
-
-CREATE UNIQUE INDEX IF NOT EXISTS ix_pix_payments_provider_payment_id ON pix_payments (provider_payment_id);
 
 
 CREATE TABLE IF NOT EXISTS purchases (
@@ -105,9 +100,9 @@ CREATE TABLE IF NOT EXISTS purchases (
 
 ;
 
-CREATE INDEX IF NOT EXISTS ix_purchases_product_id ON purchases (product_id);
-
 CREATE INDEX IF NOT EXISTS ix_purchases_user_id ON purchases (user_id);
+
+CREATE INDEX IF NOT EXISTS ix_purchases_product_id ON purchases (product_id);
 
 
 CREATE TABLE IF NOT EXISTS transactions (
@@ -124,13 +119,13 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 ;
 
-CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id);
+CREATE INDEX IF NOT EXISTS ix_transactions_type ON transactions (type);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_transactions_deposit_ref ON transactions (type, reference_id) WHERE type = 'DEPOSIT' AND reference_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS ix_transactions_user_created ON transactions (user_id, created_at);
 
-CREATE INDEX IF NOT EXISTS ix_transactions_type ON transactions (type);
+CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id);
 
 
 CREATE TABLE IF NOT EXISTS affiliates (
@@ -153,3 +148,16 @@ CREATE TABLE IF NOT EXISTS affiliates (
 CREATE INDEX IF NOT EXISTS ix_affiliates_referred_id ON affiliates (referred_id);
 
 CREATE INDEX IF NOT EXISTS ix_affiliates_affiliate_id ON affiliates (affiliate_id);
+
+
+-- =====================================================================
+-- ALTERAÇÕES PARA BANCO EXISTENTE
+-- Cadastro de cliente desativado: remove as colunas de cadastro.
+-- Seguro de rodar quantas vezes for preciso (IF EXISTS).
+-- =====================================================================
+
+ALTER TABLE users DROP COLUMN IF EXISTS customer_name;
+ALTER TABLE users DROP COLUMN IF EXISTS customer_email;
+ALTER TABLE users DROP COLUMN IF EXISTS customer_phone;
+ALTER TABLE users DROP COLUMN IF EXISTS customer_document_type;
+ALTER TABLE users DROP COLUMN IF EXISTS customer_document_number;

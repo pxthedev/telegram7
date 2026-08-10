@@ -4,13 +4,14 @@ import logging
 from decimal import Decimal
 
 from aiogram import Bot, F, Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
 from app.database.models.user import User
-from app.exceptions import CustomerDataRequired, PaymentError
+from app.exceptions import PaymentError
 from app.handlers.common import answer, edit_message, ensure_user
 from app.keyboards.balance import (
     balance_amounts_kb,
@@ -20,7 +21,6 @@ from app.keyboards.balance import (
     payment_kb,
 )
 from app.keyboards.callbacks import BalanceCB
-from app.services import user_service
 from app.services.payment.base import PaymentStatus
 from app.services.payment.provider import get_payment_provider
 from app.services.payment.service import PaymentService
@@ -29,10 +29,7 @@ from app.utils.formatting import esc, fmt_money
 from app.utils.qr import make_pix_qr
 from app.utils.validators import (
     parse_amount,
-    validate_cpf,
     validate_deposit_amount,
-    validate_email,
-    validate_phone,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,47 +67,49 @@ async def _create_and_show_pix(
     bot: Bot, session: AsyncSession, user: User, amount: Decimal
 ) -> None:
     service = PaymentService(get_payment_provider())
+    telegram_id = user.telegram_id
+    user_id = user.id
     try:
-        async with session.begin():
+        async with session.begin_nested():
             payment = await service.create_deposit(session, user, amount)
-    except CustomerDataRequired:
-        await bot.send_message(
-            user.telegram_id,
-            "❌ Dados cadastrais incompletos. Tente novamente.",
-            reply_markup=payment_done_kb(),
-        )
-        return
     except PaymentError:
-        logger.exception("Falha ao gerar PIX para user_id=%s", user.id)
+        logger.exception("Falha ao gerar PIX para user_id=%s", user_id)
         await bot.send_message(
-            user.telegram_id,
+            telegram_id,
             "❌ Não foi possível gerar o PIX.\n\n"
             "Tente novamente em alguns instantes.",
             reply_markup=payment_done_kb(),
         )
         return
-    await _send_pix_payment(bot, user.telegram_id, payment)
+    await session.commit()
+    await _send_pix_payment(bot, telegram_id, payment)
 
 
-def _needs_customer_data(user: User) -> bool:
-    return not (
-        user.customer_name
-        and user.customer_email
-        and user.customer_phone
-        and user.customer_document_number
-    )
-
-
-async def _start_customer_data_flow(
-    callback: CallbackQuery, state: FSMContext
-) -> None:
-    await state.set_state(BalanceStates.customer_name)
-    await edit_message(
-        callback.message,
-        "👤 Antes de gerar o PIX, precisamos dos seus dados:\n\n"
-        "Digite seu nome completo:",
-        cancel_fsm_kb(),
-    )
+@router.message(Command("pix"))
+async def cmd_pix(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    args = (message.text or "").split(maxsplit=1)
+    if len(args) < 2:
+        await message.answer(
+            f"💰 Para adicionar saldo, use o comando:\n\n"
+            f"<code>/pix {fmt_money(settings.min_deposit_amount)}</code>\n\n"
+            f"Valores entre {fmt_money(settings.min_deposit_amount)} e "
+            f"{fmt_money(settings.max_deposit_amount)}.\n\n"
+            f"Exemplo: /pix 50",
+            reply_markup=cancel_fsm_kb(),
+        )
+        return
+    amount = parse_amount(args[1])
+    if not validate_deposit_amount(amount):
+        await message.answer(
+            f"❌ Valor inválido. Escolha entre "
+            f"{fmt_money(settings.min_deposit_amount)} e "
+            f"{fmt_money(settings.max_deposit_amount)}.",
+            reply_markup=cancel_fsm_kb(),
+        )
+        return
+    user = await ensure_user(session, message.from_user)
+    await state.clear()
+    await _create_and_show_pix(message.bot, session, user, amount)
 
 
 @router.callback_query(BalanceCB.filter(F.action == "menu"))
@@ -144,10 +143,6 @@ async def cb_balance_choose(
         )
         return
     user = await ensure_user(session, callback.from_user)
-    if _needs_customer_data(user):
-        await state.update_data(balance_amount=str(amount))
-        await _start_customer_data_flow(callback, state)
-        return
     await state.clear()
     try:
         await callback.message.delete()
@@ -187,85 +182,7 @@ async def fsm_custom_amount(
         return
     await state.update_data(balance_amount=str(amount))
     user = await ensure_user(session, message.from_user)
-    if _needs_customer_data(user):
-        await state.set_state(BalanceStates.customer_name)
-        await message.answer(
-            "👤 Antes de gerar o PIX, precisamos dos seus dados:\n\n"
-            "Digite seu nome completo:",
-            reply_markup=cancel_fsm_kb(),
-        )
-        return
     await state.clear()
-    await _create_and_show_pix(message.bot, session, user, amount)
-
-
-@router.message(BalanceStates.customer_name)
-async def fsm_customer_name(message: Message, state: FSMContext) -> None:
-    name = (message.text or "").strip()
-    if len(name) < 3:
-        await message.answer("❌ Nome muito curto. Digite seu nome completo:")
-        return
-    await state.update_data(customer_name=name)
-    await state.set_state(BalanceStates.customer_email)
-    await message.answer("📧 Digite seu e-mail:", reply_markup=cancel_fsm_kb())
-
-
-@router.message(BalanceStates.customer_email)
-async def fsm_customer_email(message: Message, state: FSMContext) -> None:
-    email = (message.text or "").strip()
-    if not validate_email(email):
-        await message.answer(
-            "❌ E-mail inválido. Digite um e-mail válido:", reply_markup=cancel_fsm_kb()
-        )
-        return
-    await state.update_data(customer_email=email)
-    await state.set_state(BalanceStates.customer_phone)
-    await message.answer(
-        "📞 Digite seu telefone com DDD (ex: 11999999999):",
-        reply_markup=cancel_fsm_kb(),
-    )
-
-
-@router.message(BalanceStates.customer_phone)
-async def fsm_customer_phone(message: Message, state: FSMContext) -> None:
-    if not validate_phone(message.text or ""):
-        await message.answer(
-            "❌ Telefone inválido. Use apenas números, com DDD (10 ou 11 dígitos):",
-            reply_markup=cancel_fsm_kb(),
-        )
-        return
-    digits = "".join(ch for ch in (message.text or "") if ch.isdigit())
-    await state.update_data(customer_phone=digits)
-    await state.set_state(BalanceStates.customer_document)
-    await message.answer(
-        "🪪 Digite seu CPF (somente números):", reply_markup=cancel_fsm_kb()
-    )
-
-
-@router.message(BalanceStates.customer_document)
-async def fsm_customer_document(
-    message: Message, state: FSMContext, session: AsyncSession
-) -> None:
-    if not validate_cpf(message.text or ""):
-        await message.answer(
-            "❌ CPF inválido. Digite um CPF válido (somente números):",
-            reply_markup=cancel_fsm_kb(),
-        )
-        return
-    data = await state.get_data()
-    user = await ensure_user(session, message.from_user)
-    await user_service.save_customer_data(
-        session,
-        user,
-        name=data["customer_name"],
-        email=data["customer_email"],
-        phone=data["customer_phone"],
-        document_type="cpf",
-        document_number="".join(ch for ch in (message.text or "") if ch.isdigit()),
-    )
-    await session.commit()
-    await state.clear()
-    amount = Decimal(data["balance_amount"])
     await _create_and_show_pix(message.bot, session, user, amount)
 
 
@@ -287,8 +204,9 @@ async def cb_balance_check(
         )
         return
     try:
-        async with session.begin():
+        async with session.begin_nested():
             await service.check_payment(session, payment)
+        await session.commit()
     except PaymentError:
         await edit_message(
             callback.message,
@@ -344,8 +262,8 @@ async def cb_balance_cancel(
         )
         return
     if payment.status == PaymentStatus.PENDING.value:
-        async with session.begin():
-            payment.status = PaymentStatus.CANCELLED.value
+        payment.status = PaymentStatus.CANCELLED.value
+        await session.commit()
     await edit_message(
         callback.message,
         "❌ Cobrança cancelada.",

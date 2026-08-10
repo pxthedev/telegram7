@@ -457,10 +457,11 @@ async def cb_admin_product_toggle(
             callback.message, "❌ Produto não encontrado.", admin_back_kb("products")
         )
         return
-    async with session.begin():
+    async with session.begin_nested():
         product = await product_service.set_product_active(
             session, product.id, not product.active
         )
+    await session.commit()
     await cb_admin_product(callback, callback_data, session)
 
 

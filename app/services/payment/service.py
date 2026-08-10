@@ -13,7 +13,7 @@ from app.config.settings import settings
 from app.database.models.pix_payment import PixPayment
 from app.database.models.user import User
 from app.database.models.webhook_event import WebhookEvent
-from app.exceptions import CustomerDataRequired, PaymentError, PaymentNotFound
+from app.exceptions import PaymentError, PaymentNotFound
 from app.services import user_service
 from app.services.payment.base import (
     PaymentCustomer,
@@ -24,6 +24,27 @@ from app.services.payment.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _synthetic_cpf(seed: int) -> str:
+    digits = str(seed).zfill(11)[:9]
+    for index in (9, 10):
+        total = sum(int(d) * ((index + 1) - pos) for pos, d in enumerate(digits))
+        check = (total * 10) % 11
+        check = 0 if check == 10 else check
+        digits += str(check)
+    return digits
+
+
+def _build_customer(user: User) -> PaymentCustomer:
+    name = user.first_name or user.username or f"Usuário {user.telegram_id}"
+    return PaymentCustomer(
+        name=name,
+        email=f"usuario{user.telegram_id}@exemplo.com",
+        phone="11999999999",
+        document_type="cpf",
+        document_number=_synthetic_cpf(user.telegram_id),
+    )
 
 
 class PaymentService:
@@ -42,9 +63,6 @@ class PaymentService:
         description: str = "Recarga de saldo",
     ) -> PixPayment:
         amount = amount.quantize(Decimal("0.01"))
-        if not user.customer_email or not user.customer_phone or not user.customer_document_number:
-            raise CustomerDataRequired
-
         external_id = self._new_external_id()
         payment = PixPayment(
             user_id=user.id,
@@ -57,13 +75,7 @@ class PaymentService:
         session.add(payment)
         await session.flush()
 
-        customer = PaymentCustomer(
-            name=user.customer_name or user.first_name or "Usuário",
-            email=user.customer_email,
-            phone=user.customer_phone,
-            document_type=(user.customer_document_type or "cpf"),
-            document_number=user.customer_document_number,
-        )
+        customer = _build_customer(user)
         try:
             response: PaymentResponse = await self.provider.create_pix_payment(
                 amount, external_id, description, customer

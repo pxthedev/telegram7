@@ -9,26 +9,15 @@ from sqlalchemy import func, select
 from app.database.models.pix_payment import PixPayment
 from app.database.models.transaction import Transaction
 from app.database.models.webhook_event import WebhookEvent
-from app.exceptions import CustomerDataRequired, PaymentError
+from app.exceptions import PaymentError
 from app.services import user_service
 from app.services.payment.base import PaymentStatus
 from app.services.payment.service import PaymentService
-
-VALID_CPF = "52998224725"
 
 
 async def _customer_user(session, telegram_id: int):
     user = await user_service.get_or_create_user(
         session, telegram_id, f"cliente{telegram_id}", f"Cliente {telegram_id}"
-    )
-    await user_service.save_customer_data(
-        session,
-        user,
-        name="Cliente Teste",
-        email="cliente@example.com",
-        phone="11999999999",
-        document_type="cpf",
-        document_number=VALID_CPF,
     )
     return user
 
@@ -65,13 +54,17 @@ async def test_create_deposit_pending(session, provider):
     assert payment.expires_at is not None
 
 
-async def test_create_deposit_requires_customer_data(session, provider):
+async def test_create_deposit_without_customer_data(session, provider):
     user = await user_service.get_or_create_user(session, 20002, "semdados", "SemDados")
     await session.commit()
     service = PaymentService(provider)
 
-    with pytest.raises(CustomerDataRequired):
-        await service.create_deposit(session, user, Decimal("50"))
+    payment = await service.create_deposit(session, user, Decimal("50"))
+    await session.commit()
+
+    assert payment.status == PaymentStatus.PENDING.value
+    assert payment.user_id == user.id
+    assert provider.created[-1][2].document_number is not None
 
 
 async def test_create_deposit_provider_failure(session, provider):

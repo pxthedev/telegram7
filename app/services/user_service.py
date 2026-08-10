@@ -80,24 +80,6 @@ async def ensure_affiliate_code(session: AsyncSession, user: User) -> str:
     return user.affiliate_code
 
 
-async def save_customer_data(
-    session: AsyncSession,
-    user: User,
-    name: str,
-    email: str,
-    phone: str,
-    document_type: str,
-    document_number: str,
-) -> User:
-    user.customer_name = name
-    user.customer_email = email
-    user.customer_phone = phone
-    user.customer_document_type = document_type
-    user.customer_document_number = document_number
-    await session.flush()
-    return user
-
-
 async def credit_balance(
     session: AsyncSession,
     user_id: int,

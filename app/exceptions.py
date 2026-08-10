@@ -26,10 +26,6 @@ class InvalidAmount(BotError):
     pass
 
 
-class CustomerDataRequired(BotError):
-    pass
-
-
 class PaymentError(BotError):
     pass
 

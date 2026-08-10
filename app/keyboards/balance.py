@@ -8,7 +8,7 @@ def balance_amounts_kb() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="R$ 10", callback_data=BalanceCB(action="choose", value="10").pack()
+                    text="R$ 15", callback_data=BalanceCB(action="choose", value="15").pack()
                 ),
                 InlineKeyboardButton(
                     text="R$ 25", callback_data=BalanceCB(action="choose", value="25").pack()

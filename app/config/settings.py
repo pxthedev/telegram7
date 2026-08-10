@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     affiliate_percentage: Decimal = Decimal("25")
     pix_expiration_minutes: int = 30
-    min_deposit_amount: Decimal = Decimal("1")
+    min_deposit_amount: Decimal = Decimal("15")
     max_deposit_amount: Decimal = Decimal("5000")
 
     freepay_api_url: str = "https://api.freepaybrasil.com"
