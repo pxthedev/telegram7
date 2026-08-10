@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import uuid4
@@ -36,6 +37,13 @@ def _synthetic_cpf(seed: int) -> str:
     return digits
 
 
+def _normalize_phone(value: str) -> str:
+    digits = re.sub(r"\D", "", value)
+    if not digits.startswith("55"):
+        digits = "55" + digits
+    return "+" + digits
+
+
 def _build_customer(user: User) -> PaymentCustomer:
     name = (
         settings.pix_customer_name
@@ -44,7 +52,7 @@ def _build_customer(user: User) -> PaymentCustomer:
         or f"Usuário {user.telegram_id}"
     )
     email = settings.pix_customer_email or f"usuario{user.telegram_id}@exemplo.com"
-    phone = settings.pix_customer_phone or "11999999999"
+    phone = _normalize_phone(settings.pix_customer_phone or "11999999999")
     return PaymentCustomer(
         name=name,
         email=email,
