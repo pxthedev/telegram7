@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefault
 
 from app.config.settings import settings
 from app.handlers import (
@@ -25,6 +26,26 @@ from app.utils.logging import setup_logging
 from app.web.webhook import start_webhook_server, stop_webhook_server
 
 logger = logging.getLogger(__name__)
+
+PUBLIC_COMMANDS = [
+    BotCommand(command="start", description="🏠 Menu principal"),
+    BotCommand(command="pix", description="💰 Adicionar saldo"),
+    BotCommand(command="cancel", description="❌ Cancelar ação"),
+]
+
+ADMIN_COMMANDS = [
+    BotCommand(command="admin", description="⚙️ Painel administrativo"),
+    BotCommand(command="addproduto", description="➕ Adicionar produto"),
+]
+
+
+async def setup_commands(bot: Bot) -> None:
+    await bot.set_my_commands(PUBLIC_COMMANDS, scope=BotCommandScopeDefault())
+    for admin_id in settings.admin_ids:
+        await bot.set_my_commands(
+            [*PUBLIC_COMMANDS, *ADMIN_COMMANDS],
+            scope=BotCommandScopeChat(chat_id=admin_id),
+        )
 
 
 async def main() -> None:
@@ -66,6 +87,7 @@ async def main() -> None:
 
     async def on_startup() -> None:
         nonlocal webhook_runner
+        await setup_commands(bot)
         webhook_runner = await start_webhook_server(bot)
         logger.info("Bot iniciado (polling + webhook FreePay)")
 

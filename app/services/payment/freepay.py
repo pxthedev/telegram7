@@ -141,6 +141,13 @@ class FreePayClient(PaymentProvider):
             response = await self.client.post(
                 "/v1/payment-transaction/create", json=payload
             )
+            if response.status_code >= 400:
+                logger.error(
+                    "FreePay: cobrança PIX rejeitada (external_id=%s) HTTP %s: %s",
+                    external_id,
+                    response.status_code,
+                    response.text[:1000],
+                )
             response.raise_for_status()
         except httpx.HTTPError as exc:
             logger.error(

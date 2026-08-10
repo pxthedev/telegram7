@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     freepay_timeout_seconds: float = 15.0
     freepay_retries: int = 1
 
+    pix_customer_name: str = ""
+    pix_customer_email: str = ""
+    pix_customer_phone: str = ""
+    pix_customer_document_type: str = "cpf"
+    pix_customer_document_number: str = ""
+
     webhook_base_url: str = ""
     webhook_host: str = "0.0.0.0"
     webhook_port: int = Field(

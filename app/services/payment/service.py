@@ -37,13 +37,21 @@ def _synthetic_cpf(seed: int) -> str:
 
 
 def _build_customer(user: User) -> PaymentCustomer:
-    name = user.first_name or user.username or f"Usuário {user.telegram_id}"
+    name = (
+        settings.pix_customer_name
+        or user.first_name
+        or user.username
+        or f"Usuário {user.telegram_id}"
+    )
+    email = settings.pix_customer_email or f"usuario{user.telegram_id}@exemplo.com"
+    phone = settings.pix_customer_phone or "11999999999"
     return PaymentCustomer(
         name=name,
-        email=f"usuario{user.telegram_id}@exemplo.com",
-        phone="11999999999",
-        document_type="cpf",
-        document_number=_synthetic_cpf(user.telegram_id),
+        email=email,
+        phone=phone,
+        document_type=settings.pix_customer_document_type or "cpf",
+        document_number=settings.pix_customer_document_number
+        or _synthetic_cpf(user.telegram_id),
     )
 
 
