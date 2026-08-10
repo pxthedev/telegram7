@@ -70,6 +70,13 @@ class Settings(BaseSettings):
         "✅ Benefício desbloqueado."
     )
 
+    @field_validator("shop_description", "benefits_text", mode="before")
+    @classmethod
+    def _decode_literal_newlines(cls, value):
+        if isinstance(value, str) and "\\n" in value:
+            return value.replace("\\n", "\n")
+        return value
+
     @field_validator("admin_ids", mode="before")
     @classmethod
     def _parse_admin_ids(cls, value):
