@@ -10,7 +10,7 @@ from app.exceptions import (
     InsufficientStock,
     ProductNotFound,
 )
-from app.handlers.common import answer, edit_message
+from app.handlers.common import answer, edit_message, ensure_user
 from app.keyboards.callbacks import ShopCB
 from app.keyboards.main import back_to_menu_kb
 from app.keyboards.shop import buy_result_kb, product_kb, shop_kb
@@ -81,13 +81,15 @@ async def cb_shop_buy(
     session: AsyncSession,
 ) -> None:
     await answer(callback)
-    user_id = callback.from_user.id
+    user = await ensure_user(session, callback.from_user)
+    user_id = user.id
 
     try:
-        async with session.begin():
+        async with session.begin_nested():
             purchase = await purchase_service.buy_product(
                 session, user_id, callback_data.product_id
             )
+        await session.commit()
     except ProductNotFound:
         await edit_message(
             callback.message,
