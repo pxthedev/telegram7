@@ -42,10 +42,15 @@ ADMIN_COMMANDS = [
 async def setup_commands(bot: Bot) -> None:
     await bot.set_my_commands(PUBLIC_COMMANDS, scope=BotCommandScopeDefault())
     for admin_id in settings.admin_ids:
-        await bot.set_my_commands(
-            [*PUBLIC_COMMANDS, *ADMIN_COMMANDS],
-            scope=BotCommandScopeChat(chat_id=admin_id),
-        )
+        try:
+            await bot.set_my_commands(
+                [*PUBLIC_COMMANDS, *ADMIN_COMMANDS],
+                scope=BotCommandScopeChat(chat_id=admin_id),
+            )
+        except Exception:
+            logger.warning(
+                "Não foi possível registrar comandos para o admin_id=%s", admin_id
+            )
 
 
 async def main() -> None:
@@ -106,7 +111,6 @@ async def main() -> None:
         )
     finally:
         await dp.storage.close()
-        await dp.storage.wait_closed()
 
 
 if __name__ == "__main__":
