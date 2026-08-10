@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import json
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -113,29 +112,31 @@ class FreePayClient(PaymentProvider):
         customer: PaymentCustomer,
     ) -> PaymentResponse:
         payload = {
-            "amount": self._to_provider_amount(amount),
-            "payment_method": "pix",
-            "postback_url": self.postback_url,
-            "customer": {
-                "name": customer.name,
-                "email": customer.email,
-                "phone": customer.phone,
-                "document": {
-                    "type": customer.document_type,
-                    "number": customer.document_number,
+            "request": {
+                "amount": self._to_provider_amount(amount),
+                "payment_method": "pix",
+                "postback_url": self.postback_url,
+                "customer": {
+                    "name": customer.name,
+                    "email": customer.email,
+                    "phone": customer.phone,
+                    "document": {
+                        "type": customer.document_type,
+                        "number": customer.document_number,
+                    },
                 },
+                "items": [
+                    {
+                        "title": description or "Recarga de saldo",
+                        "unit_price": self._to_provider_amount(amount),
+                        "quantity": 1,
+                        "tangible": False,
+                        "external_ref": external_id,
+                    }
+                ],
+                "pix": {"expires_in_days": self.expires_in_days},
             },
-            "items": [
-                {
-                    "title": description or "Recarga de saldo",
-                    "unit_price": self._to_provider_amount(amount),
-                    "quantity": 1,
-                    "tangible": False,
-                    "external_ref": external_id,
-                }
-            ],
-            "pix": {"expires_in_days": self.expires_in_days},
-            "metadata": json.dumps({"external_id": external_id, "source": "telegram_bot"}),
+            "metadata": {"external_id": external_id, "source": "telegram_bot"},
         }
         try:
             response = await self.client.post(
