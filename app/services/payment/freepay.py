@@ -112,30 +112,28 @@ class FreePayClient(PaymentProvider):
         customer: PaymentCustomer,
     ) -> PaymentResponse:
         payload = {
-            "request": {
-                "amount": self._to_provider_amount(amount),
-                "payment_method": "pix",
-                "postback_url": self.postback_url,
-                "customer": {
-                    "name": customer.name,
-                    "email": customer.email,
-                    "phone": customer.phone,
-                    "document": {
-                        "type": customer.document_type,
-                        "number": customer.document_number,
-                    },
+            "amount": self._to_provider_amount(amount),
+            "payment_method": "pix",
+            "postback_url": self.postback_url,
+            "customer": {
+                "name": customer.name,
+                "email": customer.email,
+                "phone": customer.phone,
+                "document": {
+                    "type": customer.document_type,
+                    "number": customer.document_number,
                 },
-                "items": [
-                    {
-                        "title": description or "Recarga de saldo",
-                        "unit_price": self._to_provider_amount(amount),
-                        "quantity": 1,
-                        "tangible": False,
-                        "external_ref": external_id,
-                    }
-                ],
-                "pix": {"expires_in_days": self.expires_in_days},
             },
+            "items": [
+                {
+                    "title": description or "Recarga de saldo",
+                    "unit_price": self._to_provider_amount(amount),
+                    "quantity": 1,
+                    "tangible": False,
+                    "external_ref": external_id,
+                }
+            ],
+            "pix": {"expires_in_days": self.expires_in_days},
             "metadata": {"external_id": external_id, "source": "telegram_bot"},
         }
         try:
@@ -162,8 +160,8 @@ class FreePayClient(PaymentProvider):
 
     def parse_payment_response(self, payload: dict) -> PaymentResponse:
         try:
-            data = payload["data"][0]
-            pix = (data.get("pix") or [{}])[0]
+            data = payload["data"]
+            pix = data.get("pix") or {}
             qr_code = pix.get("qr_code")
             return PaymentResponse(
                 external_id=data.get("external_id") or "",
@@ -174,7 +172,7 @@ class FreePayClient(PaymentProvider):
                 pix_copy_paste=qr_code,
                 expires_at=self._parse_datetime(pix.get("expiration_date")),
             )
-        except (KeyError, IndexError, TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
             logger.error("FreePay: resposta de criação inválida: %r", payload)
             raise PaymentError("Resposta inválida da FreePay") from exc
 
@@ -190,7 +188,7 @@ class FreePayClient(PaymentProvider):
             )
             raise PaymentError("Não foi possível consultar o pagamento") from exc
 
-        data = response.json()
+        data = response.json()["data"]
         return PaymentResponse(
             external_id=data.get("external_id") or "",
             provider_id=data.get("id") or provider_id,

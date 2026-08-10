@@ -31,20 +31,16 @@ def _client(**overrides) -> FreePayClient:
 def test_parse_create_response_pending():
     client = _client()
     payload = {
-        "data": [
-            {
-                "id": "abc123",
-                "status": "PENDING",
-                "amount": 5000,
-                "payment_method": "pix",
-                "pix": [
-                    {
-                        "expiration_date": "2026-08-09T10:00:00Z",
-                        "qr_code": "00020126580014BR.GOV.BCB.PIX...",
-                    }
-                ],
-            }
-        ]
+        "data": {
+            "id": "abc123",
+            "status": "PENDING",
+            "amount": 5000,
+            "payment_method": "pix",
+            "pix": {
+                "expiration_date": "2026-08-09T10:00:00Z",
+                "qr_code": "00020126580014BR.GOV.BCB.PIX...",
+            },
+        }
     }
     response = client.parse_payment_response(payload)
     assert response.provider_id == "abc123"
@@ -59,14 +55,12 @@ def test_parse_create_response_pending():
 def test_parse_create_response_paid():
     client = _client()
     payload = {
-        "data": [
-            {
-                "id": "xyz",
-                "status": "PAID",
-                "amount": 1000,
-                "pix": [{"expiration_date": None, "qr_code": "abc"}],
-            }
-        ]
+        "data": {
+            "id": "xyz",
+            "status": "PAID",
+            "amount": 1000,
+            "pix": {"expiration_date": None, "qr_code": "abc"},
+        }
     }
     response = client.parse_payment_response(payload)
     assert response.status is PaymentStatus.PAID
@@ -76,7 +70,7 @@ def test_parse_create_response_paid():
 def test_parse_create_response_invalid():
     client = _client()
     with pytest.raises(PaymentError):
-        client.parse_payment_response({"data": []})
+        client.parse_payment_response({"data": None})
     with pytest.raises(PaymentError):
         client.parse_payment_response({})
 
