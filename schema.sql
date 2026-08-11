@@ -161,3 +161,17 @@ ALTER TABLE users DROP COLUMN IF EXISTS customer_email;
 ALTER TABLE users DROP COLUMN IF EXISTS customer_phone;
 ALTER TABLE users DROP COLUMN IF EXISTS customer_document_type;
 ALTER TABLE users DROP COLUMN IF EXISTS customer_document_number;
+
+
+-- =====================================================================
+-- ROW LEVEL SECURITY nas tabelas do schema public
+-- (o bot usa a conexão direta via asyncpg, que ignora RLS)
+-- =====================================================================
+
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pix_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE affiliates ENABLE ROW LEVEL SECURITY;

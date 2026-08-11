@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.product import Product
@@ -101,6 +102,21 @@ async def delete_product(session: AsyncSession, product_id: int) -> None:
         raise ProductNotFound
     await session.delete(product)
     await session.flush()
+
+
+async def delete_all_products(session: AsyncSession) -> tuple[int, int]:
+    products = await list_all_products(session)
+    deleted = 0
+    skipped = 0
+    for product in products:
+        try:
+            async with session.begin_nested():
+                await session.delete(product)
+            deleted += 1
+        except IntegrityError:
+            skipped += 1
+    await session.commit()
+    return deleted, skipped
 
 
 async def get_product_stats(

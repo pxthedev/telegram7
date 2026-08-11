@@ -107,6 +107,22 @@ def admin_zero_stock_kb() -> InlineKeyboardMarkup:
     )
 
 
+def admin_delete_products_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Confirmar",
+                    callback_data=AdminCB(action="productsdel").pack(),
+                ),
+                InlineKeyboardButton(
+                    text="❌ Cancelar", callback_data=AdminCB(action="menu").pack()
+                ),
+            ]
+        ]
+    )
+
+
 def admin_products_kb(
     products: list[Product], page: int, total_pages: int
 ) -> InlineKeyboardMarkup:

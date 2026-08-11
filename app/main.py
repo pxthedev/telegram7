@@ -56,6 +56,7 @@ ADMIN_COMMANDS = [
     BotCommand(command="admin", description="⚙️ Painel administrativo"),
     BotCommand(command="addproduto", description="➕ Adicionar produto"),
     BotCommand(command="zerarestoque", description="🚫 Zerar estoque"),
+    BotCommand(command="excluirprodutos", description="🗑️ Excluir produtos"),
 ]
 
 

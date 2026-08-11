@@ -24,6 +24,7 @@ from app.handlers.common import answer, edit_message
 from app.keyboards.admin import (
     admin_back_kb,
     admin_dashboard_kb,
+    admin_delete_products_kb,
     admin_list_paginated_kb,
     admin_menu_kb,
     admin_product_kb,
@@ -107,6 +108,18 @@ async def cmd_zero_all_stock(message: Message, session: AsyncSession) -> None:
         f"⚠️ Zerar o estoque de {total or 0} produto(s)?\n"
         "Essa ação não pode ser desfeita.",
         reply_markup=admin_zero_stock_kb(),
+    )
+
+
+@router.message(Command("excluirprodutos"))
+async def cmd_delete_all_products(message: Message, session: AsyncSession) -> None:
+    if not settings.is_admin(message.from_user.id, message.from_user.username):
+        return
+    total = await session.scalar(select(func.count(Product.id)))
+    await message.answer(
+        f"⚠️ Excluir todos os {total or 0} produto(s)?\n"
+        "Essa ação não pode ser desfeita.",
+        reply_markup=admin_delete_products_kb(),
     )
 
 
@@ -612,6 +625,18 @@ async def cb_admin_zero_all_stock(
         f"✅ Estoque de {total} produto(s) zerado.",
         admin_back_kb("menu"),
     )
+
+
+@router.callback_query(AdminCB.filter(F.action == "productsdel"))
+async def cb_admin_delete_all_products(
+    callback: CallbackQuery, session: AsyncSession
+) -> None:
+    await answer(callback)
+    deleted, skipped = await product_service.delete_all_products(session)
+    text = f"✅ {deleted} produto(s) excluído(s)."
+    if skipped:
+        text += f"\n⚠️ {skipped} com vendas registradas foram mantidos."
+    await edit_message(callback.message, text, admin_back_kb("menu"))
 
 
 @router.callback_query(AdminCB.filter(F.action == "orders"))
