@@ -49,6 +49,10 @@ class Settings(BaseSettings):
         default=8080, validation_alias=AliasChoices("WEBHOOK_PORT", "PORT")
     )
 
+    sheets_enabled: bool = False
+    sheets_webhook_url: str = ""
+    sheets_sync_interval_seconds: int = 60
+
     environment: Literal["development", "production", "test"] = "development"
 
     rate_limit_max: int = 30

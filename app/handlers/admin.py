@@ -28,6 +28,7 @@ from app.keyboards.admin import (
     admin_menu_kb,
     admin_product_kb,
     admin_products_kb,
+    admin_zero_stock_kb,
 )
 from app.keyboards.callbacks import AdminCB
 from app.services import product_service, transaction_service
@@ -92,6 +93,20 @@ async def cmd_add_product(message: Message, state: FSMContext) -> None:
         "➕ Novo produto\n\n"
         "Envie o nome:",
         reply_markup=admin_back_kb("products"),
+    )
+
+
+@router.message(Command("zerarestoque"))
+async def cmd_zero_all_stock(message: Message, session: AsyncSession) -> None:
+    if not settings.is_admin(message.from_user.id, message.from_user.username):
+        return
+    total = await session.scalar(
+        select(func.count(Product.id)).where(Product.stock > 0)
+    )
+    await message.answer(
+        f"⚠️ Zerar o estoque de {total or 0} produto(s)?\n"
+        "Essa ação não pode ser desfeita.",
+        reply_markup=admin_zero_stock_kb(),
     )
 
 
@@ -577,6 +592,25 @@ async def cb_admin_stock(
         callback.message,
         text,
         admin_list_paginated_kb("stock", callback_data.page, total_pages),
+    )
+
+
+@router.callback_query(AdminCB.filter(F.action == "stockzero"))
+async def cb_admin_zero_all_stock(
+    callback: CallbackQuery, session: AsyncSession
+) -> None:
+    await answer(callback)
+    total = await session.scalar(select(func.count(Product.id)))
+    if not total:
+        await edit_message(
+            callback.message, "📦 Nenhum produto cadastrado.", admin_back_kb("menu")
+        )
+        return
+    await product_service.zero_all_stock(session)
+    await edit_message(
+        callback.message,
+        f"✅ Estoque de {total} produto(s) zerado.",
+        admin_back_kb("menu"),
     )
 
 

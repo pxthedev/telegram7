@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.product import Product
@@ -76,6 +76,12 @@ async def set_product_stock(
     product.stock = stock
     await session.flush()
     return product
+
+
+async def zero_all_stock(session: AsyncSession) -> int:
+    result = await session.execute(update(Product).values(stock=0))
+    await session.commit()
+    return result.rowcount or 0
 
 
 async def set_product_active(

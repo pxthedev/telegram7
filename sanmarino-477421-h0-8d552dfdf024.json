@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "sanmarino-477421-h0",
+  "private_key_id": "8d552dfdf024ac17e52ed3b90a702a274b338c13",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDXrakh9HT6DmcV\nfHut27sxklgCn+WXkf7on3f7fmJhh+dC+rh4TlxOriR+TcLdAWy+kjNRLgqSxNzb\n9UimjU7HE5ojjq9h9DYjbfHkecYdLLxdfDl86N6Fc06OwmGWZZqna9+0NhT0hcF/\nLxCI8azuR5VWf0BWlxINYPCcRJdKAv/yUwOaZljFCUAhrX/lXA0NV4sIV0XJ3O+M\nE2ik5J8scchxK4cqRELFZSdnPuzwptlGTrWYZ+ZX7nQpzdYpYYGdSb7n8DUbPCiT\nVwsbWY1Kfo8NweeqUkh+FyWJpz8SIbRwu+QAND+L4NHgp8Xc1Zs7IgNSYbbGQ2IR\nA1I3QNW5AgMBAAECggEAEaErWxAtY6c7u+DiBzMX2RR6RzSkwr/3UzJ9zzvkdM50\nE+CEpajaGMBZUU2v6PrN1cIDmdYmnRqkZwJkvuB8GP+8ML3gDiS1LC43gJKHpCjc\n+NNHq7MpRUVInZi7+1wwyRCjR4rIKbipOWkyc881cIC/b0OVkb5lhlxvLobYyv7P\nQHg6iGY57KmlTuyuYxWikDq9un39PbdJOPMx5XBdL8lL1eSYY7irzUhigFi9FB97\nDslFE/7Kf6sHFMZk92jO7ciIQTK/RuIurejD/0TFhLrIB/4EZz8LlL6iqfhFyG6F\nC2IqWqljzUiWDI9QhU4sx1vFffzuKL97DDmClPoYFQKBgQD9jr1TabR1C3Qdp3iP\nlpHgMiPtHT9aGMg7qXSRuXmpzpBncF2J6tMNgIdj7DOWiEdCaNq94PwoFolxjE+I\nOje1fA4dlj/SQ53vuxyhwM3/9TIpcUd8X5prRSlEwvXHfwZxlZFK0iG8d5dxnWEE\n1oCRiki3hfJybYTltkLL0os7KwKBgQDZwYNKLkTq5f+DE8w4blQn5I2y+06aUqyr\n2HgvuiLRCmtol6aM+pOvm7xewanUbl4x4Fo3Z7eC4YG+JP9L44OG55QhsL035gcv\nbRD73rCZEKkd8K2g/jAz0vy4dkTnmowEl9K6l41ywFo6scriQWmhZFyf3npxPCLl\n4mU2IljwqwKBgQDITEj9KqSWTWz1vAT+EOi9nX5J4m/YQXlzwAJI16bnYDksrVQH\nDgyZPu41HjMGeDMqn+AkXSV0mZELtNZi+/JkGFKiRr214RpTdZFBqihRSSXOHSFm\ne7Nlh+X43rX/WTYC5i83VtW1pxdodfVdOAGqdv3IlDSY9jEksZ0EnBbGrwKBgQDV\nJ2/09UXRCkMLdB28P4NxaXCrewR+W99aeBNt5K6gIaryP0BxT/exNqk1uC0eHMtn\n1014XrZsD4KJNn4RMyxUqet+7xrJ1QnDiufNJTeJHZ3uCOJtbWSR1j478smQTOAy\nvsswi5mScmfgfJk00QMtUKi6dXU10r/2d57LVuPo8QKBgQCWXEY8XyV8qrmg8Nxa\nRFOkza1OUNJInXDR9m8TdfJkr8rxblZAf8H1hcxqWZk7RHGn1Cigdc1zHj4PB+VT\n3Hj1SPYJUWtTBjixeI+5BGfOVj1cASjvIFRTgftuee6nXOQ/2ZABcwITi6FbcwRr\nROxtWdsoOT00+SS0fXq3ZTZ8Rw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "dev-pedro@sanmarino-477421-h0.iam.gserviceaccount.com",
+  "client_id": "106936817435762542957",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dev-pedro%40sanmarino-477421-h0.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
